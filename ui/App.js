@@ -6,6 +6,7 @@ import { Communities } from '../communities/communities';
 import { People } from '../people/people';
 import { formatDate } from '../utils/formatDate';
 import { timePassedInSeconds } from '../utils/timePassedInSeconds';
+import { peopleByCompanyInTheEvent, peopleInTheEvent, peopleNotCheckedIn } from '../utils/eventSummary';
 
 export const App = () => {
   // State to manage the selected community and trigger rerender
@@ -72,10 +73,9 @@ export const App = () => {
     return true;
   }
 
-  // Render the UI components
   return (
-    <div className="">
-      <div className="bg-gradient-to-b from-[#e1e5f0] to-[#d0edf5] py-[20px] md:py-[15px] md:px-20 relative shadow-md">
+    <div>
+      <div className="bg-gradient-to-b from-[#e1e5f0] to-[#d0edf5] py-[20px] md:py-[15px] md:px-20 px-2 relative shadow-md">
         <h1 className="text-3xl font-semibold">{Texts.HOME_TITLE}</h1>
       </div>
 
@@ -86,33 +86,55 @@ export const App = () => {
         ) : (
           <div className="flex flex-col items-center w-full">
             {/* Dropdown to select an event */}
-            <select value={communityId} onChange={(e) => setCommunityId(e.target.value)} required className="w-1/2 bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+            <select value={communityId} onChange={(e) => setCommunityId(e.target.value)} required className="w-full md:w-1/2 mx-4 md:mx-0 bg-gray-200 border border-gray-200 text-gray-700 py-3 md:px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
               <option value="" disabled>Select an event</option>
               {communities.map(community => (
                 <option key={community._id} value={community._id}>{community.name}</option>
               ))}
             </select>
 
-            <div className="mt-6 flex flex-col">
+            {/* Diplay event summary */}
+            {!loadingPeople && communityId && (
+              <div className="flex flex-col my-10 border md:w-1/2 md:p-6 p-2 bg-violet-50 mx-2 md:mx-0">
+                <span>
+                  <strong className="md:text-xl">People in the event right now:</strong> <span className="text-blue-400">{peopleInTheEvent(people)}</span>
+                </span>
+                <span>
+                  <strong className="md:text-xl">People by company in the event right now:</strong> <span className="text-blue-400">{peopleByCompanyInTheEvent(people).join(', ')}</span>
+                </span>
+                <span>
+                  <strong className="md:text-xl">People not checked-in:</strong> <span className="text-blue-400">{peopleNotCheckedIn(people)}</span>
+                </span>
+              </div>
+            )}
+
+            <div className="flex flex-col mx-2 md:mx-0">
               {loadingPeople ? (
                 // Display loading message while fetching people data
                 <span className="mt-4">Loading...</span>
               ) : people.length ? (
                 // Display list of people if data is available
-                <ul className="mt-6 flex flex-col gap-6 border p-6 rounded">
+                <ul className="mt-6 flex flex-col gap-6 border md:p-6 p-2 rounded">
                   {people.map(person => (
                     // Display information about each person in the list
-                    <li key={person._id} className="flex items-center justify-between shadow p-3">
+                    <li key={person._id} className="flex items-center justify-between shadow p-3 space-x-2">
                       <div className="flex flex-col">
-                        <span className="text-lg">Name: {person.firstName} {person.lastName}</span>
+                        <div className="flex gap-2">
+                          <span className="text-lg font-bold">Name:</span><span className="text-lg">{person.firstName} {person.lastName}</span>
+                        </div>
                         {person.companyName && person.title ? (
-                          // Display additional information if available
-                          <div className="flex gap-4 text-gray-500">
-                            <span>Company: {person.companyName}</span>
-                            <span>Title: {person.title}</span>
+                          <div className="flex flex-col md:flex-row md:gap-4 text-gray-500 md:text-base text-sm">
+                            <div className="flex gap-2">
+                              <span className="font-bold">Company:</span>
+                              <span>{person.companyName}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <span className="font-bold">Title:</span>
+                              <span>{person.title}</span>
+                            </div>
                           </div>
                         ) : ''}
-                        <div className="flex gap-4 text-sm text-gray-500">
+                        <div className="flex flex-col md:flex-row md:gap-4 text-sm text-gray-500">
                           <div className="flex gap-2">
                             <span className="text-green-400">Check-in:</span>
                             <span>{person.checkIn ? formatDate(new Date(person.checkIn)) : 'N/A'}</span>
@@ -126,10 +148,10 @@ export const App = () => {
 
                       {/* Render check-in and check-out buttons based on conditions */}
                       {!person.checkIn && !person.checkOut &&
-                        <button onClick={() => handleCheckInAndCheckOut(person)} className="text-sm px-4 py-2 hover:bg-green-400 bg-green-200 rounded shadow-sm">Check in {person.firstName} {person.lastName}</button>}
+                        <button onClick={() => handleCheckInAndCheckOut(person)} className="md:text-sm text-xs md:px-4 px-2 py-2 hover:bg-green-400 bg-green-200 rounded shadow-sm">Check in <span className="font-bold">{person.firstName} {person.lastName}</span></button>}
 
                       {person.checkIn && !person.checkOut && showCheckoutButton(person) &&
-                        <button onClick={() => handleCheckInAndCheckOut(person)} className="text-sm px-4 py-2 hover:bg-red-400 bg-red-200 rounded shadow-sm">Check out <span className="font-bold">{person.firstName} {person.lastName}</span> </button>}
+                        <button onClick={() => handleCheckInAndCheckOut(person)} className="md:text-sm text-xs md:px-4 px-2 py-2 hover:bg-red-400 bg-red-200 rounded shadow-sm">Check out <span className="font-bold">{person.firstName} {person.lastName}</span> </button>}
                     </li>
                   ))}
                 </ul>
